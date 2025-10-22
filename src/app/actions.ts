@@ -6,8 +6,7 @@ import { generateTaskAnalysis } from '@/ai/flows/generate-task-analysis';
 import { updateTaskStatus as updateTaskStatusFlow } from '@/ai/flows/update-task-status';
 import { db } from '@/lib/firebase';
 import type { Task } from '@/lib/types';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, serverTimestamp, addDoc, updateDoc } from 'firebase/firestore';
 
 // Helper to add a new task to Firestore
 async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<boolean> {
@@ -16,13 +15,16 @@ async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<bool
   const tasksCollectionRef = collection(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`);
   const { 'Última Atualização': _, ...dataToAdd } = taskData;
   
-  addDocumentNonBlocking(tasksCollectionRef, {
-      ...dataToAdd,
-      'Última Atualização': serverTimestamp(),
-  });
-  
-  // Non-blocking, so we optimistically return true. Errors are handled by the global listener.
-  return true;
+  try {
+    await addDoc(tasksCollectionRef, {
+        ...dataToAdd,
+        'Última Atualização': serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error adding document: ", error);
+    return false;
+  }
 }
 
 // Helper to update an existing task in Firestore
@@ -31,13 +33,16 @@ async function updateTask(taskId: string, newStatus: string, userId: string): Pr
   
   const taskDocRef = doc(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`, taskId);
   
-  updateDocumentNonBlocking(taskDocRef, {
-    Status: newStatus,
-    'Última Atualização': serverTimestamp(),
-  });
-
-  // Non-blocking, so we optimistically return true. Errors are handled by the global listener.
-  return true;
+  try {
+    await updateDoc(taskDocRef, {
+      Status: newStatus,
+      'Última Atualização': serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating document: ", error);
+    return false;
+  }
 }
 
 // Main server action to handle user prompts
@@ -60,8 +65,7 @@ export async function handlePrompt(
       if (success) {
         return { type: 'update', content: `✅ Tarefa **${result.Tarefa}** adicionada com sucesso!` };
       } else {
-        // This path is less likely to be taken with non-blocking updates, but kept for safety.
-        return { type: 'error', content: '❌ Falha ao iniciar a gravação da nova tarefa.' };
+        return { type: 'error', content: '❌ Falha ao gravar a nova tarefa no Firestore.' };
       }
     }
 
@@ -87,8 +91,7 @@ export async function handlePrompt(
       if (success) {
         return { type: 'update', content: `✅ Status de **${taskToUpdate.Tarefa}** atualizado para **${flowResult.newStatus}**.` };
       } else {
-        // This path is less likely to be taken with non-blocking updates, but kept for safety.
-        return { type: 'error', content: '❌ Falha ao iniciar a atualização da tarefa.' };
+        return { type: 'error', content: '❌ Falha ao atualizar a tarefa no Firestore.' };
       }
     }
 
