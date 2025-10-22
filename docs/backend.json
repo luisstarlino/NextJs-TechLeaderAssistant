@@ -83,7 +83,7 @@
   "firestore": {
     "structure": [
       {
-        "path": "/artifacts/{appId}/users/{userId}/tasks/{taskId}",
+        "path": "/users/{userId}/tasks/{taskId}",
         "definition": {
           "entityName": "Task",
           "schema": {
@@ -91,10 +91,6 @@
           },
           "description": "Stores task data for a specific user. The path enforces user-specific ownership for data access and simplifies security rules.",
           "params": [
-            {
-              "name": "appId",
-              "description": "The unique identifier for the application. It will be read from the (window as any).__app_id during initialization to isolate environments or instances"
-            },
             {
               "name": "userId",
               "description": "The unique identifier for the user, obtained from Firebase Auth."
@@ -105,24 +101,7 @@
             }
           ]
         }
-      },
-      {
-        "path": "/artifacts/{appId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Top-level collection grouping data by application ID. Used to differentiate instances of the application. In current version, the app only uses a single artifactId.",
-          "params": [
-            {
-              "name": "appId",
-              "description": "The unique identifier for the application."
-            }
-          ]
-        }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to isolate user data within their own paths, enabling secure and efficient data access and management. Each user, whether authenticated anonymously or via custom token, has a dedicated space under the `artifacts/{appId}/users/{userId}` path. All data related to a specific user will reside within this path, ensuring clear ownership and simplified security rules.\n\nSpecifically:\n\n*   **Authorization Independence:**  Each task document is created under a user-specific path, `/artifacts/{appId}/users/{userId}/tasks/{taskId}`. This eliminates the need for `get()` calls in security rules to check ownership, as the path itself enforces ownership.\n*   **QAPs Compliance (List Operation Security):**  Because all data under `/artifacts/{appId}/users/{userId}/tasks` belongs to the user identified by `{userId}`, listing tasks under that collection is secure. There's no risk of exposing data from other users. The segregation achieves QAPs.\n*   **Private User Data:** Path-based ownership ensures that only the authenticated user can access their tasks. This also removes the need for complex role-based access control within the tasks collection.\n*   The top-level `/artifacts/{appId}` collection acts as a logical grouping for different applications/instances. This enhances organization and allows for potential multi-tenancy in the future, though the current application uses a single, known `appId`.\n\nDenormalization is not required because of the strict path-based ownership. The tasks collection does not inherit any attributes from a parent Project, eliminating the need to copy data for authorization purposes."
+    ]
   }
 }
