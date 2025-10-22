@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { User } from 'firebase/auth';
-import { collection, onSnapshot, query, orderBy, Query, DocumentData, CollectionReference } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useAuth } from '@/components/auth-provider';
 import Header from '@/components/layout/header';
 import ChatPanel from '@/components/chat/chat-panel';
 import TaskDashboard from '@/components/tasks/task-dashboard';
 import { handlePrompt } from './actions';
 import type { Task } from '@/lib/types';
-import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useMemoFirebase, useFirestore } from '@/firebase';
@@ -44,18 +42,22 @@ export default function Home() {
         'Última Atualização': doc.data()['Última Atualização']?.toDate().toLocaleDateString('pt-BR') || 'N/A',
       })) as Task[];
       setTasks(fetchedTasks);
-    }, (err) => {
-      console.error("Erro no listener do Firestore:", err);
-
-      const path = (tasksQuery as unknown as { _query: { path: { canonicalString: () => string } } })._query.path.canonicalString();
+      setError(null); // Clear previous errors on successful sync
+    }, 
+    // This is the required error handling pattern for Firestore security rules.
+    (err) => {
+      const path = (tasksQuery as any)._query.path.canonicalString();
 
       const contextualError = new FirestorePermissionError({
         operation: 'list',
-        path,
+        path: path,
       });
-
+      
+      // The global listener will catch this and throw it for Next.js to display.
       errorEmitter.emit('permission-error', contextualError);
-      setError("Falha ao sincronizar tarefas em tempo real. Verifique as permissões.");
+
+      // We can also set a user-friendly message in the UI.
+      setError("Falha ao sincronizar tarefas. Verifique as permissões do Firestore.");
     });
 
     return () => unsubscribe();
