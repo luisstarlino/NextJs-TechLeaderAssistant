@@ -7,52 +7,33 @@ import { updateTaskStatus as updateTaskStatusFlow } from '@/ai/flows/update-task
 import { db } from '@/lib/firebase';
 import type { Task } from '@/lib/types';
 import { collection, doc, serverTimestamp, addDoc, updateDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 // Helper to add a new task to Firestore
-async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<boolean> {
-  if (!userId) return false;
+async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<void> {
+  if (!userId) {
+    throw new Error('User ID is required to add a task.');
+  }
   
   const tasksCollectionRef = collection(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`);
   const { 'Última Atualização': _, ...dataToAdd } = taskData;
   
-  let success = true;
-  addDoc(tasksCollectionRef, {
-      ...dataToAdd,
-      'Última Atualização': serverTimestamp(),
-  }).catch((serverError) => {
-    success = false;
-    const permissionError = new FirestorePermissionError({
-      path: tasksCollectionRef.path,
-      operation: 'create',
-      requestResourceData: dataToAdd,
-    });
-    console.error("Error adding document: ", permissionError.message);
-    // Although we log it for server visibility, we don't return the message to the UI here.
-    // The UI shows a generic failure, which is what we're seeing.
-    // In a real scenario with global error listeners, this might be handled differently.
-  });
-  
-  // This might return true before the async operation fails.
-  // A better approach would be to await and use try/catch
-  // For now, let's adjust this to return the promise result
   try {
     await addDoc(tasksCollectionRef, {
         ...dataToAdd,
         'Última Atualização': serverTimestamp(),
     });
-    return true;
   } catch (error) {
-    console.error("Error adding document: ", error);
-    // Ideally, re-throw or handle the specific permission error
-    return false;
+    console.error("Error adding document in addTask: ", error);
+    // Re-throw the error to be caught by the caller (handlePrompt)
+    throw new Error(`Firestore error when adding task: ${(error as Error).message}`);
   }
 }
 
 // Helper to update an existing task in Firestore
-async function updateTask(taskId: string, newStatus: string, userId: string): Promise<boolean> {
-  if (!userId || !taskId) return false;
+async function updateTask(taskId: string, newStatus: string, userId: string): Promise<void> {
+  if (!userId || !taskId) {
+    throw new Error('User ID and Task ID are required to update a task.');
+  }
   
   const taskDocRef = doc(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`, taskId);
   
@@ -61,16 +42,10 @@ async function updateTask(taskId: string, newStatus: string, userId: string): Pr
       Status: newStatus,
       'Última Atualização': serverTimestamp(),
     });
-    return true;
   } catch (error) {
-    console.error("Error updating document: ", error);
-    const permissionError = new FirestorePermissionError({
-        path: taskDocRef.path,
-        operation: 'update',
-        requestResourceData: { Status: newStatus },
-      });
-    console.error("Detailed permission error: ", permissionError.message);
-    return false;
+    console.error("Error updating document in updateTask: ", error);
+    // Re-throw the error to be caught by the caller (handlePrompt)
+    throw new Error(`Firestore error when updating task: ${(error as Error).message}`);
   }
 }
 
@@ -90,12 +65,8 @@ export async function handlePrompt(
         currentTasks: tasks.map(t => ({ id: t.id, Tarefa: t.Tarefa, Status: t.Status, Projeto: t.Projeto })),
       });
       
-      const success = await addTask(result, userId);
-      if (success) {
-        return { type: 'update', content: `✅ Tarefa **${result.Tarefa}** adicionada com sucesso!` };
-      } else {
-        return { type: 'error', content: '❌ Falha ao gravar a nova tarefa no Firestore.' };
-      }
+      await addTask(result, userId);
+      return { type: 'update', content: `✅ Tarefa **${result.Tarefa}** adicionada com sucesso!` };
     }
 
     // 2. Handle Task Status Update
@@ -116,12 +87,8 @@ export async function handlePrompt(
         taskDescription: taskToUpdate.Tarefa,
       });
 
-      const success = await updateTask(taskToUpdate.id, flowResult.newStatus, userId);
-      if (success) {
-        return { type: 'update', content: `✅ Status de **${taskToUpdate.Tarefa}** atualizado para **${flowResult.newStatus}**.` };
-      } else {
-        return { type: 'error', content: '❌ Falha ao atualizar a tarefa no Firestore.' };
-      }
+      await updateTask(taskToUpdate.id, flowResult.newStatus, userId);
+      return { type: 'update', content: `✅ Status de **${taskToUpdate.Tarefa}** atualizado para **${flowResult.newStatus}**.` };
     }
 
     // 3. Handle General Analysis
@@ -133,6 +100,7 @@ export async function handlePrompt(
 
   } catch (error: any) {
     console.error('Error handling prompt:', error);
-    return { type: 'error', content: `🚨 Erro no processamento da IA: ${error.message}` };
+    // Return the specific error message from the failed operation
+    return { type: 'error', content: `❌ Falha na operação: ${error.message}` };
   }
 }
