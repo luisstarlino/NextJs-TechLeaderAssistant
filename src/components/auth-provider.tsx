@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { initializeFirebase, initiateAnonymousSignIn } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 const { auth } = initializeFirebase();
@@ -20,33 +21,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        // Use non-blocking anonymous sign-in
-        initiateAnonymousSignIn(auth);
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setIsAuthReady(true);
     });
 
     return () => unsubscribe();
   }, []);
 
-  if (!isAuthReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Conectando ao assistente...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <AuthContext.Provider value={{ user, isAuthReady }}>
-      {children}
+      {isAuthReady ? children : (
+        <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Conectando ao assistente...</p>
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -12,15 +13,24 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useMemoFirebase, useFirestore } from '@/firebase';
 import { addTask, updateTaskStatus } from '@/lib/firestore-service';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 
 export default function Home() {
   const { user, isAuthReady } = useAuth();
   const db = useFirestore();
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [assistantOutput, setAssistantOutput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthReady && !user) {
+      router.push('/login');
+    }
+  }, [isAuthReady, user, router]);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -44,7 +54,6 @@ export default function Home() {
       setTasks(fetchedTasks);
       setError(null); // Clear previous errors on successful sync
     }, 
-    // This is the required error handling pattern for Firestore security rules.
     (err) => {
       const path = (tasksQuery as any)._query.path.canonicalString();
 
@@ -53,10 +62,8 @@ export default function Home() {
         path: path,
       });
       
-      // The global listener will catch this and throw it for Next.js to display.
       errorEmitter.emit('permission-error', contextualError);
 
-      // We can also set a user-friendly message in the UI.
       setError("Falha ao sincronizar tarefas. Verifique as permissões do Firestore.");
     });
 
@@ -75,10 +82,10 @@ export default function Home() {
     if (result.type === 'error') {
       setError(result.content);
     } else if (result.type === 'create' && result.task) {
-        addTask(db, user.uid, result.task); // Non-blocking, error handled inside
+        addTask(db, user.uid, result.task);
         setAssistantOutput(result.content);
     } else if (result.type === 'update' && result.task) {
-        updateTaskStatus(db, user.uid, result.task.taskId, result.task.newStatus); // Non-blocking
+        updateTaskStatus(db, user.uid, result.task.taskId, result.task.newStatus);
         setAssistantOutput(result.content);
     } else { // analysis
       setAssistantOutput(result.content);
@@ -86,6 +93,14 @@ export default function Home() {
 
     setIsLoading(false);
   }, [tasks, user, db]);
+
+  if (!isAuthReady || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background p-4 lg:p-6">
