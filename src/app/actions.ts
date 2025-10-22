@@ -7,6 +7,8 @@ import { updateTaskStatus as updateTaskStatusFlow } from '@/ai/flows/update-task
 import { db } from '@/lib/firebase';
 import type { Task } from '@/lib/types';
 import { collection, doc, serverTimestamp, addDoc, updateDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 // Helper to add a new task to Firestore
 async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<boolean> {
@@ -15,6 +17,26 @@ async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<bool
   const tasksCollectionRef = collection(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`);
   const { 'Última Atualização': _, ...dataToAdd } = taskData;
   
+  let success = true;
+  addDoc(tasksCollectionRef, {
+      ...dataToAdd,
+      'Última Atualização': serverTimestamp(),
+  }).catch((serverError) => {
+    success = false;
+    const permissionError = new FirestorePermissionError({
+      path: tasksCollectionRef.path,
+      operation: 'create',
+      requestResourceData: dataToAdd,
+    });
+    console.error("Error adding document: ", permissionError.message);
+    // Although we log it for server visibility, we don't return the message to the UI here.
+    // The UI shows a generic failure, which is what we're seeing.
+    // In a real scenario with global error listeners, this might be handled differently.
+  });
+  
+  // This might return true before the async operation fails.
+  // A better approach would be to await and use try/catch
+  // For now, let's adjust this to return the promise result
   try {
     await addDoc(tasksCollectionRef, {
         ...dataToAdd,
@@ -23,6 +45,7 @@ async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<bool
     return true;
   } catch (error) {
     console.error("Error adding document: ", error);
+    // Ideally, re-throw or handle the specific permission error
     return false;
   }
 }
@@ -41,6 +64,12 @@ async function updateTask(taskId: string, newStatus: string, userId: string): Pr
     return true;
   } catch (error) {
     console.error("Error updating document: ", error);
+    const permissionError = new FirestorePermissionError({
+        path: taskDocRef.path,
+        operation: 'update',
+        requestResourceData: { Status: newStatus },
+      });
+    console.error("Detailed permission error: ", permissionError.message);
     return false;
   }
 }
