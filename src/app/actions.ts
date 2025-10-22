@@ -14,7 +14,7 @@ async function addTask(taskData: Omit<Task, 'id'>, userId: string): Promise<void
     throw new Error('User ID is required to add a task.');
   }
   
-  const tasksCollectionRef = collection(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`);
+  const tasksCollectionRef = collection(db, `users/${userId}/tasks`);
   const { 'Última Atualização': _, ...dataToAdd } = taskData;
   
   try {
@@ -35,7 +35,7 @@ async function updateTask(taskId: string, newStatus: string, userId: string): Pr
     throw new Error('User ID and Task ID are required to update a task.');
   }
   
-  const taskDocRef = doc(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`, taskId);
+  const taskDocRef = doc(db, `users/${userId}/tasks`, taskId);
   
   try {
     await updateDoc(taskDocRef, {

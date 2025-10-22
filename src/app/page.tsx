@@ -26,7 +26,7 @@ export default function Home() {
     };
 
     const userId = user.uid;
-    const tasksCollectionRef = collection(db, `artifacts/tech-leader-assistant/users/${userId}/tasks`);
+    const tasksCollectionRef = collection(db, `users/${userId}/tasks`);
     const q = query(tasksCollectionRef, orderBy('Última Atualização', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
