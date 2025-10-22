@@ -1,11 +1,35 @@
 
-import { CheckCircle, Clock, XCircle, AlertTriangle, Inbox } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, Inbox, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import EditTaskDialog from './edit-task-dialog';
 
 interface TaskListProps {
   tasks: Task[];
+  onUpdateTask: (taskId: string, updatedData: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
 const getStatusStyles = (status: string) => {
@@ -22,7 +46,24 @@ const getStatusStyles = (status: string) => {
   return { icon: AlertTriangle, color: 'text-yellow-700 bg-yellow-100 border-yellow-200 dark:text-yellow-300 dark:bg-yellow-900/50 dark:border-yellow-700/50', label: 'Pendente' };
 };
 
-const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }) => {
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+
+  const handleDeleteConfirm = () => {
+    if (taskToDelete && taskToDelete.id) {
+      onDeleteTask(taskToDelete.id);
+    }
+    setTaskToDelete(null);
+  };
+
+  const handleEditConfirm = (updatedData: Partial<Task>) => {
+    if (taskToEdit && taskToEdit.id) {
+      onUpdateTask(taskToEdit.id, updatedData);
+    }
+    setTaskToEdit(null);
+  }
+
   if (tasks.length === 0) {
     return (
         <div className="text-center text-muted-foreground italic p-8 border-2 border-dashed rounded-lg">
@@ -34,38 +75,86 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <Table>
-        <TableHeader className='bg-primary/5'>
-          <TableRow>
-            <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Projeto</TableHead>
-            <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Tarefa</TableHead>
-            <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Responsável</TableHead>
-            <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Prazo</TableHead>
-            <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tasks.map((task) => {
-            const { icon: Icon, color, label } = getStatusStyles(task.Status);
-            return (
-              <TableRow key={task.id} className="hover:bg-muted/50 transition-colors">
-                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">{task.Projeto}</TableCell>
-                <TableCell className="px-4 py-3 text-sm text-foreground max-w-xs truncate">{task.Tarefa}</TableCell>
-                <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Responsável}</TableCell>
-                <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Prazo}</TableCell>
-                <TableCell className="px-4 py-3 whitespace-nowrap">
-                  <Badge variant="outline" className={`gap-1.5 ${color}`}>
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <div className="overflow-hidden rounded-lg border">
+        <Table>
+          <TableHeader className='bg-primary/5'>
+            <TableRow>
+              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Projeto</TableHead>
+              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Tarefa</TableHead>
+              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Responsável</TableHead>
+              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Prazo</TableHead>
+              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Status</TableHead>
+              <TableHead className="px-4 py-2 text-center text-xs font-bold text-primary uppercase tracking-wider">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tasks.map((task) => {
+              const { icon: Icon, color, label } = getStatusStyles(task.Status);
+              return (
+                <TableRow key={task.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">{task.Projeto}</TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-foreground max-w-xs truncate">{task.Tarefa}</TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Responsável}</TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Prazo}</TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap">
+                    <Badge variant="outline" className={`gap-1.5 ${color}`}>
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setTaskToEdit(task)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => setTaskToDelete(task)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A tarefa <strong className="text-foreground">{taskToDelete?.Tarefa}</strong> será excluída permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Dialog */}
+      {taskToEdit && (
+        <EditTaskDialog
+          task={taskToEdit}
+          onOpenChange={(open) => !open && setTaskToEdit(null)}
+          onSave={handleEditConfirm}
+        />
+      )}
+    </>
   );
 };
 

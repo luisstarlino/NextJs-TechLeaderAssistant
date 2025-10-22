@@ -4,7 +4,8 @@ import { createTaskFromNaturalLanguage } from '@/ai/flows/create-tasks-from-natu
 import { generateTaskAnalysis } from '@/ai/flows/generate-task-analysis';
 import { updateTaskStatus as updateTaskStatusFlow } from '@/ai/flows/update-task-status';
 import type { Task } from '@/lib/types';
-import { addTask, updateTaskStatus } from '@/lib/firestore-service';
+// We are no longer calling Firestore from server actions.
+// import { addTask, updateTaskStatus } from '@/lib/firestore-service';
 
 // Main server action to handle user prompts
 export async function handlePrompt(
@@ -25,7 +26,7 @@ export async function handlePrompt(
       // The AI might return an 'Última Atualização' field, but we want Firestore to set it.
       const { 'Última Atualização': _, ...taskToAdd } = result;
 
-      // We no longer add to DB here. We send the task data back to the client.
+      // Send the task data back to the client to be added to Firestore there.
       return { type: 'create', content: `✅ Tarefa **${result.Tarefa}** pronta para ser criada!`, task: taskToAdd };
     }
 
@@ -47,7 +48,7 @@ export async function handlePrompt(
         taskDescription: taskToUpdate.Tarefa,
       });
 
-      // We no longer update DB here. We send the data back to the client.
+      // Send the update data back to the client to be processed there.
       return { type: 'update', content: `✅ Status de **${taskToUpdate.Tarefa}** pronto para ser atualizado para **${flowResult.newStatus}**.`, task: { taskId: taskToUpdate.id, newStatus: flowResult.newStatus } };
     }
 
@@ -60,7 +61,6 @@ export async function handlePrompt(
 
   } catch (error: any) {
     console.error('Error handling prompt:', error);
-    // Return the specific error message from the failed operation
     return { type: 'error', content: `❌ Falha na operação: ${error.message}` };
   }
 }

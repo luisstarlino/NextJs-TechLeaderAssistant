@@ -7,9 +7,11 @@ import { Separator } from '../ui/separator';
 
 interface TaskDashboardProps {
   tasks: Task[];
+  onUpdateTask: (taskId: string, updatedData: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const TaskDashboard: React.FC<TaskDashboardProps> = ({ tasks }) => {
+const TaskDashboard: React.FC<TaskDashboardProps> = ({ tasks, onUpdateTask, onDeleteTask }) => {
   return (
     <Card className="shadow-lg h-full">
       <CardHeader className="flex flex-row justify-between items-start">
@@ -25,7 +27,7 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ tasks }) => {
         </div>
       </CardHeader>
       <CardContent>
-        <TaskList tasks={tasks} />
+        <TaskList tasks={tasks} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />
 
         <Separator className="my-6" />
 
