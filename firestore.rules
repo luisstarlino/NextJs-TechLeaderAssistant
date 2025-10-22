@@ -1,93 +1,68 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
+ * @file Firebase Security Rules for Firestore.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for tasks, ensuring that only the authenticated user can create, read, update, or delete their own tasks. Projects are at the artifacts level and are not user specific.
+ * This ruleset enforces a strict user-ownership model, where each user can only access data under their own user ID.
  *
  * Data Structure:
- * - /artifacts/{appId}/users/{userId}/tasks/{taskId}: Stores individual task documents, with the path enforcing ownership.
- * - /artifacts/{appId}: Stores project documents, grouped by application ID.
+ * Data is organized under /artifacts/{appId}/users/{userId}/tasks/{taskId} for tasks and /artifacts/{appId} for projects.
  *
  * Key Security Decisions:
- * - User listing is implicitly denied by the absence of a top-level `users` collection.
- * - Anonymous authentication is enabled, but all data is still protected by user-specific paths.
- * - The rules explicitly deny write access to any path that does not match the defined structure.
+ * - Tasks are strictly owned by the user ID in the path.
+ * - Listing tasks is allowed only for the owner.
+ * - Projects are publicly readable, but only the application can create them.
  *
  * Denormalization for Authorization:
- * The path-based ownership model eliminates the need for denormalization.  The task document ID is not redundantly stored within the task document itself.  The user ID is not redundantly stored within the task document itself.
- *
- * Structural Segregation:
- * User-specific data (tasks) is stored under the /users/{userId} path, while application-level data (projects) is stored at the top level.
+ * Not required. Path-based ownership is enforced.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
-     * @return {boolean} True if the request is authenticated, false otherwise.
+     * @description Allows access to project data for the specified application ID.
+     * @path /artifacts/{appId}
+     * @allow (get, list) if true
+     * @allow (create) if false // TODO: Add application-level validation to allow create.
+     * @deny (update, delete) always
+     * @principle Public read, application-only create.
      */
+    match /artifacts/{appId} {
+      allow get, list: if true;
+      allow create: if false; // TODO: Add application-level validation to allow create.
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Manages user-specific task data.
+     * @path /artifacts/{appId}/users/{userId}/tasks/{taskId}
+     * @allow (create) User 'alice' (auth.uid: 'alice') can create a task under /artifacts/testapp/users/alice/tasks/task1.
+     * @allow (get, list, update, delete) User 'alice' (auth.uid: 'alice') can access a task under /artifacts/testapp/users/alice/tasks/task1.
+     * @deny (create, get, list, update, delete) User 'bob' (auth.uid: 'bob') cannot access a task under /artifacts/testapp/users/alice/tasks/task1.
+     * @principle Enforces document ownership; only the user matching the {userId} can access the data.
+     */
+    match /artifacts/{appId}/users/{userId}/tasks/{taskId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isValidTaskCreateRequest(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user ID matches the provided user ID.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
-     * @return {boolean} True if the user IDs match, false otherwise.
-     */
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
-    /**
-     * @description Checks if the authenticated user is the owner and the resource exists.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
-     * @return {boolean} True if the user IDs match and the resource exists, false otherwise.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * @description Rules for the /artifacts/{appId}/users/{userId}/tasks/{taskId} collection.
-     * @path /artifacts/{appId}/users/{userId}/tasks/{taskId}
-     * @allow (create) Authenticated user with ID 'user123' can create a task under /artifacts/app1/users/user123/tasks/task456.
-     * @allow (get) Authenticated user with ID 'user123' can read a task under /artifacts/app1/users/user123/tasks/task456.
-     * @allow (update) Authenticated user with ID 'user123' can update a task under /artifacts/app1/users/user123/tasks/task456.
-     * @allow (delete) Authenticated user with ID 'user123' can delete a task under /artifacts/app1/users/user123/tasks/task456.
-     * @deny (create) Authenticated user with ID 'user456' cannot create a task under /artifacts/app1/users/user123/tasks/task456.
-     * @deny (update) Authenticated user with ID 'user456' cannot update a task under /artifacts/app1/users/user123/tasks/task456.
-     * @deny (delete) Authenticated user with ID 'user456' cannot delete a task under /artifacts/app1/users/user123/tasks/task456.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /artifacts/{appId}/users/{userId}/tasks/{taskId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for the /artifacts/{appId} collection.
-     * @path /artifacts/{appId}
-     * @allow (get) Any user can read project data.
-     * @allow (list) Any user can list project data.
-     * @allow (create) Any authenticated user can create project data.
-     * @allow (update) Any authenticated user can update project data.
-     * @allow (delete) Any authenticated user can delete project data.
-     * @deny (create) Unauthenticated user cannot create project data.
-     * @deny (update) Unauthenticated user cannot update project data.
-     * @deny (delete) Unauthenticated user cannot delete project data.
-     * @principle Allows public read access but requires authentication for writes.
-     */
-    match /artifacts/{appId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
+    function isValidTaskCreateRequest(userId) {
+      return isOwner(userId) && request.resource.data.id == userId;
     }
   }
 }
