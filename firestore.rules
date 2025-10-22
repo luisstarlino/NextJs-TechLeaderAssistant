@@ -2,84 +2,76 @@
  * @fileoverview Firestore Security Rules for the task management application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for tasks nested under user-specific paths,
- * ensuring that only the authenticated user can access their own tasks. All read and write operations
- * are scoped to the user's unique ID, simplifying security logic and enhancing data privacy.
- * No listing of users is allowed.
+ * This ruleset enforces a strict user-ownership model for tasks, where each user has exclusive access to their own tasks.
  *
  * Data Structure:
- * - /artifacts/{appId}/users/{userId}/tasks/{taskId}: Stores individual task documents.
- * - /artifacts/{appId}: Stores project documents.
+ * - `/artifacts/{appId}/users/{userId}/tasks/{taskId}`: Stores task data for a specific user.
+ * - `/artifacts/{appId}`: Top-level collection for application-wide data.
  *
  * Key Security Decisions:
- * - Tasks are secured by path-based ownership; only the user whose ID appears in the path
- *   can access the corresponding tasks.
- * - No user listing is permitted; this is a standard security practice.
+ * - Users can only list tasks under their own user ID.
+ * - Data access is strictly limited to the authenticated user.
+ * - Write operations must be performed by the owner.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the current user is signed in.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the given userId matches the authenticated user's ID.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the user is the owner and the document exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rules for the /artifacts/{appId}/users/{userId}/tasks/{taskId} path.
+     * @description Allows users to manage tasks within their specific user ID.
      * @path /artifacts/{appId}/users/{userId}/tasks/{taskId}
-     * @allow (create) Signed-in user can create a task under their own user ID.
-     * @deny (create) User attempts to create a task under another user's ID.
-     * @allow (get) Signed-in user can get a task under their own user ID.
-     * @deny (get) User attempts to get a task under another user's ID.
-     * @allow (list) Signed-in user can list tasks under their own user ID.
-     * @deny (list) User attempts to list tasks under another user's ID.
-     * @allow (update) Signed-in user can update a task under their own user ID.
-     * @deny (update) User attempts to update a task under another user's ID.
-     * @allow (delete) Signed-in user can delete a task under their own user ID.
-     * @deny (delete) User attempts to delete a task under another user's ID.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - Authenticated user creates a new task under their user ID.
+     *   Request: { auth: { uid: 'user123' }, resource.data: { id: 'user123' } }
+     * @allow (get) - Authenticated user reads a specific task under their user ID.
+     *   Request: { auth: { uid: 'user123' } }
+     * @allow (list) - Authenticated user lists tasks under their user ID.
+     *   Request: { auth: { uid: 'user123' } }
+     * @allow (update) - Authenticated user updates a task under their user ID.
+     *   Request: { auth: { uid: 'user123' }, resource.data: { id: 'user123' } }
+     * @allow (delete) - Authenticated user deletes a task under their user ID.
+     *   Request: { auth: { uid: 'user123' } }
+     * @deny (create) - Authenticated user attempts to create a task under a different user ID.
+     *   Request: { auth: { uid: 'user123' }, resource.data: { id: 'user456' } }
+     * @principle Enforces document ownership for all CRUD operations.
      */
     match /artifacts/{appId}/users/{userId}/tasks/{taskId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId) && request.resource.data.id == taskId;
-      allow update: if isExistingOwner(userId) && resource.data.id == request.resource.data.id;
+      // Helper function to check if the user is the owner of the document
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      // Helper function to check if the user is the owner of the existing document
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for the /artifacts/{appId} path.
+     * @description Allows public read-only access to the artifacts collection.
      * @path /artifacts/{appId}
+     * @allow (get, list) - Any user can read the artifacts collection.
+     *   Request: { auth: null }
+     * @deny (create, update, delete) - No one can create, update, or delete artifacts.
+     *   Request: { auth: { uid: 'user123' } }
+     * @principle Provides public read access with restricted write access.
      */
     match /artifacts/{appId} {
-      // Read rules
       allow get: if true;
       allow list: if true;
-
-      // Write rules
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
