@@ -1,11 +1,12 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { initializeFirebase, initiateAnonymousSignIn } from '@/firebase';
 import { Loader2 } from 'lucide-react';
+
+const { auth } = initializeFirebase();
 
 interface AuthContextType {
   user: User | null;
@@ -23,12 +24,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (user) {
         setUser(user);
       } else {
-        try {
-          const userCredential = await signInAnonymously(auth);
-          setUser(userCredential.user);
-        } catch (error) {
-          console.error("Error signing in anonymously:", error);
-        }
+        // Use non-blocking anonymous sign-in
+        initiateAnonymousSignIn(auth);
       }
       setIsAuthReady(true);
     });

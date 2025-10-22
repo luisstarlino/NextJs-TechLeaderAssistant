@@ -1,35 +1,42 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { User } from 'firebase/auth';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, Query, DocumentData, CollectionReference } from 'firebase/firestore';
 import { useAuth } from '@/components/auth-provider';
 import Header from '@/components/layout/header';
 import ChatPanel from '@/components/chat/chat-panel';
 import TaskDashboard from '@/components/tasks/task-dashboard';
 import { handlePrompt } from './actions';
 import type { Task } from '@/lib/types';
-import { db } from '@/lib/firebase';
+import { initializeFirebase } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { useMemoFirebase, useFirestore } from '@/firebase';
+import { addTask, updateTaskStatus } from '@/lib/firestore-service';
+
 
 export default function Home() {
   const { user, isAuthReady } = useAuth();
+  const db = useFirestore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [assistantOutput, setAssistantOutput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const tasksQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, `users/${user.uid}/tasks`), orderBy('Última Atualização', 'desc'));
+  }, [db, user]);
+
+
   useEffect(() => {
-    if (!db || !isAuthReady || !user) {
+    if (!tasksQuery || !db) {
       setTasks([]);
       return;
-    };
+    }
 
-    const userId = user.uid;
-    const tasksCollectionRef = collection(db, `users/${userId}/tasks`);
-    const q = query(tasksCollectionRef, orderBy('Última Atualização', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
       const fetchedTasks: Task[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -39,14 +46,23 @@ export default function Home() {
       setTasks(fetchedTasks);
     }, (err) => {
       console.error("Erro no listener do Firestore:", err);
-      setError("Falha ao sincronizar tarefas em tempo real.");
+
+      const path = (tasksQuery as unknown as { _query: { path: { canonicalString: () => string } } })._query.path.canonicalString();
+
+      const contextualError = new FirestorePermissionError({
+        operation: 'list',
+        path,
+      });
+
+      errorEmitter.emit('permission-error', contextualError);
+      setError("Falha ao sincronizar tarefas em tempo real. Verifique as permissões.");
     });
 
     return () => unsubscribe();
-  }, [db, isAuthReady, user]);
+  }, [tasksQuery, db]);
 
   const submitPrompt = useCallback(async (prompt: string) => {
-    if (!prompt.trim() || !user) return;
+    if (!prompt.trim() || !user || !db) return;
 
     setIsLoading(true);
     setError(null);
@@ -56,12 +72,18 @@ export default function Home() {
     
     if (result.type === 'error') {
       setError(result.content);
-    } else {
+    } else if (result.type === 'create' && result.task) {
+        addTask(db, user.uid, result.task); // Non-blocking, error handled inside
+        setAssistantOutput(result.content);
+    } else if (result.type === 'update' && result.task) {
+        updateTaskStatus(db, user.uid, result.task.taskId, result.task.newStatus); // Non-blocking
+        setAssistantOutput(result.content);
+    } else { // analysis
       setAssistantOutput(result.content);
     }
 
     setIsLoading(false);
-  }, [tasks, user]);
+  }, [tasks, user, db]);
 
   return (
     <main className="min-h-screen bg-background p-4 lg:p-6">
