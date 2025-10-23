@@ -10,45 +10,52 @@ interface MarkdownRendererProps {
 
 const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
     useEffect(() => {
-        const getStyle = (variable: string) => getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+        const getStyle = (variable: string) => `hsl(${getComputedStyle(document.documentElement).getPropertyValue(variable).trim()})`;
 
-        mermaid.initialize({ 
-            startOnLoad: false, 
-            theme: 'base',
-            themeVariables: {
-                background: `hsl(${getStyle('--background')})`,
-                primaryColor: `hsl(${getStyle('--background')})`,
-                primaryTextColor: `hsl(${getStyle('--foreground')})`,
-                lineColor: `hsl(${getStyle('--border')})`,
-                secondaryColor: `hsl(${getStyle('--primary')})`,
-                tertiaryColor: `hsl(${getStyle('--primary')})`,
-                primaryBorderColor: `hsl(${getStyle('--border')})`,
-                nodeBorder: `hsl(${getStyle('--border')})`,
-                mainBkg: `hsl(${getStyle('--primary')})`,
-                textColor: `hsl(${getStyle('--foreground')})`,
-            }
-        });
-        
-        mermaid.parse(content).then(() => {
+        try {
+            mermaid.initialize({ 
+                startOnLoad: false, 
+                theme: 'base',
+                themeVariables: {
+                    background: getStyle('--background'),
+                    primaryColor: getStyle('--background'),
+                    primaryTextColor: getStyle('--foreground'),
+                    lineColor: getStyle('--border'),
+                    secondaryColor: getStyle('--primary'),
+                    tertiaryColor: getStyle('--primary'),
+                    primaryBorderColor: getStyle('--border'),
+                    nodeBorder: getStyle('--border'),
+                    mainBkg: getStyle('--primary'),
+                    textColor: getStyle('--foreground'),
+                }
+            });
+            
             const renderMermaid = async () => {
               try {
+                // Ensure the element exists before trying to render
                 const element = document.getElementById(id);
                 if (element) {
-                  const { svg } = await mermaid.render(id + '-svg', content);
-                  element.innerHTML = svg;
+                   const { svg } = await mermaid.render(id + '-svg', content);
+                   element.innerHTML = svg;
                 }
               } catch (error) {
                 console.error('Mermaid rendering error:', error);
+                const element = document.getElementById(id);
+                if(element) {
+                    element.innerHTML = "Error rendering diagram.";
+                }
               }
             };
     
             renderMermaid();
-        });
 
+        } catch (e) {
+            console.error("Could not initialize mermaid", e);
+        }
 
     }, [id, content]);
 
-    return <div className="mermaid-container" id={id} />;
+    return <div className="mermaid-container flex justify-center" id={id} />;
 };
 
 
