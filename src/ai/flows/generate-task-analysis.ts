@@ -29,7 +29,7 @@ const GenerateTaskAnalysisInputSchema = z.object({
 export type GenerateTaskAnalysisInput = z.infer<typeof GenerateTaskAnalysisInputSchema>;
 
 const GenerateTaskAnalysisOutputSchema = z.object({
-  analysisResult: z.string().describe('The generated task analysis, mind map, or list of pending tasks in markdown format.'),
+  analysisResult: z.string().describe('The generated task analysis, mind map, or list of pending tasks in markdown or Mermaid syntax.'),
 });
 export type GenerateTaskAnalysisOutput = z.infer<typeof GenerateTaskAnalysisOutputSchema>;
 
@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   prompt: `You are a leadership assistant and expert in productivity and project management.
 
   The user has provided a list of tasks and is requesting an analysis, mind map, or list of pending tasks.
-  Your goal is to use the task list to generate a helpful and informative response in markdown format based on the user's request.
+  Your goal is to use the task list to generate a helpful and informative response based on the user's request.
 
   Task List:
   {{#each taskList}}
@@ -52,7 +52,20 @@ const prompt = ai.definePrompt({
   {{/each}}
 
   User Request: {{{userPrompt}}}
-  \n  Respond in markdown format.
+
+  If the user asks for a "mind map" or "mapa mental", you MUST generate the output using Mermaid syntax inside a "mermaid" code block.
+  For example:
+  \`\`\`mermaid
+  mindmap
+    root((My Tasks))
+      ProjectA
+        Task1
+        Task2
+      ProjectB
+        Task3
+  \`\`\`
+
+  For all other requests, respond in markdown format.
   `,
 });
 
