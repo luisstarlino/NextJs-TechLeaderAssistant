@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useId } from 'react';
@@ -8,59 +7,69 @@ interface MarkdownRendererProps {
   content: string;
 }
 
-const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
+// This component is dedicated to rendering a Mermaid diagram.
+const MermaidRenderer: React.FC<{ chart: string }> = ({ chart }) => {
+    const id = `mermaid-chart-${useId()}`;
+    const [svg, setSvg] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
     useEffect(() => {
         const getStyle = (variable: string) => `hsl(${getComputedStyle(document.documentElement).getPropertyValue(variable).trim()})`;
 
-        try {
-            mermaid.initialize({ 
-                startOnLoad: false, 
-                theme: 'base',
-                themeVariables: {
-                    background: getStyle('--background'),
-                    primaryColor: getStyle('--background'),
-                    primaryTextColor: getStyle('--foreground'),
-                    lineColor: getStyle('--border'),
-                    secondaryColor: getStyle('--primary'),
-                    tertiaryColor: getStyle('--primary'),
-                    primaryBorderColor: getStyle('--border'),
-                    nodeBorder: getStyle('--border'),
-                    mainBkg: getStyle('--primary'),
-                    textColor: getStyle('--foreground'),
-                }
-            });
-            
-            const renderMermaid = async () => {
-              try {
-                // Ensure the element exists before trying to render
-                const element = document.getElementById(id);
-                if (element) {
-                   const { svg } = await mermaid.render(id + '-svg', content);
-                   element.innerHTML = svg;
-                }
-              } catch (error) {
-                console.error('Mermaid rendering error:', error);
-                const element = document.getElementById(id);
-                if(element) {
-                    element.innerHTML = "Error rendering diagram.";
-                }
-              }
-            };
-    
-            renderMermaid();
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'base',
+            themeVariables: {
+                background: getStyle('--background'),
+                primaryColor: getStyle('--background'),
+                primaryTextColor: getStyle('--foreground'),
+                lineColor: getStyle('--primary'), 
+                secondaryColor: getStyle('--accent'),
+                tertiaryColor: getStyle('--accent'),
+                primaryBorderColor: getStyle('--border'),
+                nodeBorder: getStyle('--primary'),
+                mainBkg: getStyle('--accent'),
+                textColor: getStyle('--foreground'),
+            }
+        });
 
-        } catch (e) {
-            console.error("Could not initialize mermaid", e);
-        }
+        // Define an async function to render the diagram
+        const renderDiagram = async () => {
+            try {
+                // mermaid.render() generates a random ID, which can cause issues in React.
+                // We pass our own stable ID.
+                const renderResult = await mermaid.render(id, chart);
+                setSvg(renderResult.svg);
+                setError(null);
+            } catch (e: any) {
+                console.error('Mermaid rendering failed:', e);
+                setError('Falha ao renderizar o diagrama. Verifique a sintaxe.');
+            }
+        };
 
-    }, [id, content]);
+        renderDiagram();
 
-    return <div className="mermaid-container flex justify-center" id={id} />;
+    }, [chart, id]);
+
+    if (error) {
+        return <div className="text-destructive font-semibold">{error}</div>;
+    }
+
+    if (svg) {
+        // Use dangerouslySetInnerHTML to render the SVG string from Mermaid
+        return <div className="mermaid-container flex justify-center" dangerouslySetInnerHTML={{ __html: svg }} />;
+    }
+
+    // Show a loading state while rendering
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic">
+            <p>Carregando diagrama...</p>
+        </div>
+    );
 };
 
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
-  const uniqueId = useId();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -76,9 +85,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
 
     if (mermaidMatch && mermaidMatch[1]) {
       const mermaidContent = mermaidMatch[1];
+      // Only attempt to render on the client-side
       if (isClient) {
-        return <MermaidRenderer id={`mermaid-${uniqueId}`} content={mermaidContent} />;
+        return <MermaidRenderer chart={mermaidContent} />;
       }
+      // Show a placeholder while server-side rendering or before client-side hydration
       return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic">
             <p>Carregando diagrama...</p>
