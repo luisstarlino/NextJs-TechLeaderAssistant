@@ -5,6 +5,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { SidebarTrigger } from '../ui/sidebar';
 
 const Header = () => {
   const { user } = useAuth();
@@ -36,14 +37,17 @@ const Header = () => {
 
   return (
     <header className="flex justify-between items-start">
-      <div>
-        <h1 className="text-4xl font-headline font-bold text-primary flex items-center">
-          <Zap className="w-8 h-8 mr-3 text-primary/80 fill-accent" />
-          Painel de Liderança Técnica
-        </h1>
-        <p className="text-muted-foreground mt-1 text-lg">
-          Gerenciamento de Tarefas com IA (Dados Persistidos via Firestore).
-        </p>
+       <div className="flex items-center gap-4">
+        <SidebarTrigger className="md:hidden"/>
+        <div>
+          <h1 className="text-4xl font-headline font-bold text-primary flex items-center">
+            <Zap className="w-8 h-8 mr-3 text-primary/80 fill-accent" />
+            Painel de Liderança Técnica
+          </h1>
+          <p className="text-muted-foreground mt-1 text-lg">
+            Gerenciamento de Tarefas com IA (Dados Persistidos via Firestore).
+          </p>
+        </div>
       </div>
       {user && (
         <div className="text-right">
