@@ -1,13 +1,54 @@
 
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState, useId } from 'react';
+import mermaid from 'mermaid';
 
 interface MarkdownRendererProps {
   content: string;
 }
 
+const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
+  useEffect(() => {
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    mermaid.contentLoaded();
+  }, []);
+
+  return (
+    <div className="mermaid" id={id}>
+      {content}
+    </div>
+  );
+};
+
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+  const uniqueId = useId();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const renderMarkdown = (text: string | null) => {
     if (!text) return null;
+
+    // Check for Mermaid block
+    const mermaidRegex = /```mermaid\n([\s\S]*?)\n```/;
+    const mermaidMatch = text.match(mermaidRegex);
+
+    if (mermaidMatch && mermaidMatch[1]) {
+      const mermaidContent = mermaidMatch[1];
+      if (isClient) {
+        return <MermaidRenderer id={`mermaid-${uniqueId}`} content={mermaidContent} />;
+      }
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic">
+            <p>Carregando diagrama...</p>
+        </div>
+      );
+    }
+
 
     // Replace **text** with <strong>text</strong>
     const boldedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
