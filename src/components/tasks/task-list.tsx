@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle, Clock, XCircle, AlertTriangle, Inbox, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, Inbox, MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,12 +25,20 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import EditTaskDialog from './edit-task-dialog';
+import { cn } from '@/lib/utils';
+
+
+type SortKey = keyof Task | 'id';
+type SortDirection = 'asc' | 'desc';
 
 interface TaskListProps {
   tasks: Task[];
   onUpdateTask: (taskId: string, updatedData: Partial<Task>) => void;
   onDeleteTask: (taskId: string) => void;
+  onSort: (key: SortKey) => void;
+  sortConfig: { key: SortKey; direction: SortDirection } | null;
 }
+
 
 const getStatusStyles = (status: string) => {
   const statusLower = status.toLowerCase();
@@ -46,7 +54,7 @@ const getStatusStyles = (status: string) => {
   return { icon: AlertTriangle, color: 'text-yellow-700 bg-yellow-100 border-yellow-200 dark:text-yellow-300 dark:bg-yellow-900/50 dark:border-yellow-700/50', label: 'Pendente' };
 };
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask, onSort, sortConfig }) => {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
@@ -64,6 +72,26 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }
     setTaskToEdit(null);
   }
 
+  const renderSortArrow = (key: SortKey) => {
+    if (!sortConfig || sortConfig.key !== key) {
+        return <ArrowUpDown className="w-3 h-3 ml-2 opacity-30" />;
+    }
+    return sortConfig.direction === 'asc' ? '▲' : '▼';
+  };
+
+  const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => (
+    <TableHead
+        className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider cursor-pointer hover:bg-primary/10"
+        onClick={() => onSort(sortKey)}
+    >
+        <div className="flex items-center">
+            {children}
+            <span className="ml-2">{renderSortArrow(sortKey)}</span>
+        </div>
+    </TableHead>
+  );
+
+
   if (tasks.length === 0) {
     return (
         <div className="text-center text-muted-foreground italic p-8 border-2 border-dashed rounded-lg">
@@ -80,11 +108,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }
         <Table>
           <TableHeader className='bg-primary/5'>
             <TableRow>
-              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Projeto</TableHead>
-              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Tarefa</TableHead>
-              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Responsável</TableHead>
-              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Prazo</TableHead>
-              <TableHead className="px-4 py-2 text-left text-xs font-bold text-primary uppercase tracking-wider">Status</TableHead>
+              <SortableHeader sortKey="id">ID</SortableHeader>
+              <SortableHeader sortKey="Projeto">Projeto</SortableHeader>
+              <SortableHeader sortKey="Tarefa">Tarefa</SortableHeader>
+              <SortableHeader sortKey="Responsável">Responsável</SortableHeader>
+              <SortableHeader sortKey="Prazo">Prazo</SortableHeader>
+              <SortableHeader sortKey="Status">Status</SortableHeader>
               <TableHead className="px-4 py-2 text-center text-xs font-bold text-primary uppercase tracking-wider">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -93,12 +122,13 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }
               const { icon: Icon, color, label } = getStatusStyles(task.Status);
               return (
                 <TableRow key={task.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-mono text-muted-foreground text-xs">{task.id?.substring(0, 8)}...</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">{task.Projeto}</TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground max-w-xs truncate">{task.Tarefa}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Responsável}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Prazo}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant="default" className={`gap-1.5 ${color}`}>
+                    <Badge variant="default" className={cn('gap-1.5', color)}>
                       <Icon className="w-3.5 h-3.5" />
                       {label}
                     </Badge>
