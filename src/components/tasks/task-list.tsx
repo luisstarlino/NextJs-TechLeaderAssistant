@@ -108,7 +108,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask, 
         <Table>
           <TableHeader className='bg-primary/5'>
             <TableRow>
-              <SortableHeader sortKey="id">ID</SortableHeader>
+              {/* <SortableHeader sortKey="id">ID</SortableHeader> */}
               <SortableHeader sortKey="Projeto">Projeto</SortableHeader>
               <SortableHeader sortKey="Tarefa">Tarefa</SortableHeader>
               <SortableHeader sortKey="Responsável">Responsável</SortableHeader>
@@ -122,7 +122,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask, 
               const { icon: Icon, color, label } = getStatusStyles(task.Status);
               return (
                 <TableRow key={task.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-mono text-muted-foreground text-xs">{task.id?.substring(0, 8)}...</TableCell>
+                  {/* <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-mono text-muted-foreground text-xs">{task.id?.substring(0, 8)}...</TableCell> */}
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">{task.Projeto}</TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground max-w-xs truncate">{task.Tarefa}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Responsável}</TableCell>
