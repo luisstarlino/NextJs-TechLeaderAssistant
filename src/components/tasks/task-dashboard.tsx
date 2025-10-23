@@ -1,9 +1,13 @@
 
-import { List } from 'lucide-react';
+'use client';
+import { useState, useMemo } from 'react';
+import { List, FileDown } from 'lucide-react';
 import type { Task } from '@/lib/types';
 import TaskList from './task-list';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '../ui/separator';
+import { Button } from '../ui/button';
+import { downloadCSV, downloadPDF } from '@/lib/export';
 
 interface TaskDashboardProps {
   tasks: Task[];
@@ -11,7 +15,39 @@ interface TaskDashboardProps {
   onDeleteTask: (taskId: string) => void;
 }
 
+type SortKey = keyof Task | 'id';
+type SortDirection = 'asc' | 'desc';
+
 const TaskDashboard: React.FC<TaskDashboardProps> = ({ tasks, onUpdateTask, onDeleteTask }) => {
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'Última Atualização', direction: 'desc' });
+
+    const handleSort = (key: SortKey) => {
+        let direction: SortDirection = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedTasks = useMemo(() => {
+        let sortableItems = [...tasks];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.key as keyof Task] ?? '';
+                const bValue = b[sortConfig.key as keyof Task] ?? '';
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [tasks, sortConfig]);
+
   return (
     <Card className="shadow-lg h-full">
       <CardHeader className="flex flex-row justify-between items-start">
@@ -20,14 +56,30 @@ const TaskDashboard: React.FC<TaskDashboardProps> = ({ tasks, onUpdateTask, onDe
             <List className="w-6 h-6" />
             Acompanhamento de Tarefas
           </CardTitle>
-          <CardDescription>Lista sincronizada com Firestore</CardDescription>
+          <CardDescription>Lista sincronizada com Firestore. Clique nos cabeçalhos para ordenar.</CardDescription>
         </div>
         <div className="text-sm font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-md">
           Total: {tasks.length}
         </div>
       </CardHeader>
       <CardContent>
-        <TaskList tasks={tasks} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />
+        <div className="flex justify-end gap-2 mb-4">
+            <Button variant="outline" size="sm" onClick={() => downloadCSV(sortedTasks)}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar para CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadPDF(sortedTasks)}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar para PDF
+            </Button>
+        </div>
+        <TaskList 
+            tasks={sortedTasks} 
+            onUpdateTask={onUpdateTask} 
+            onDeleteTask={onDeleteTask}
+            onSort={handleSort}
+            sortConfig={sortConfig}
+        />
 
         <Separator className="my-6" />
 
