@@ -28,20 +28,24 @@ const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, conten
                 textColor: `hsl(${getStyle('--foreground')})`,
             }
         });
+        
+        mermaid.parse(content).then(() => {
+            const renderMermaid = async () => {
+              try {
+                const element = document.getElementById(id);
+                if (element) {
+                  const { svg } = await mermaid.render(id + '-svg', content);
+                  element.innerHTML = svg;
+                }
+              } catch (error) {
+                console.error('Mermaid rendering error:', error);
+              }
+            };
+    
+            renderMermaid();
+        });
 
-        const renderMermaid = async () => {
-          try {
-            const element = document.getElementById(id);
-            if (element) {
-              const { svg } = await mermaid.render(id + '-svg', content);
-              element.innerHTML = svg;
-            }
-          } catch (error) {
-            console.error('Mermaid rendering error:', error);
-          }
-        };
 
-        renderMermaid();
     }, [id, content]);
 
     return <div className="mermaid-container" id={id} />;
@@ -105,4 +109,3 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
 };
 
 export default MarkdownRenderer;
-
