@@ -2,8 +2,8 @@
 'use client';
 import React from 'react';
 import Header from '@/components/layout/header';
-import { Loader2, LayoutDashboard, BrainCircuit } from 'lucide-react';
-import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Loader2, LayoutDashboard, BrainCircuit, Zap } from 'lucide-react';
+import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader } from '@/components/ui/sidebar';
 import TransitionLink from '@/components/layout/transition-link';
 import { useTransition } from '@/context/transition-context';
 import PageLoader from '@/components/ui/page-loader';
@@ -20,6 +20,12 @@ export default function AppLayout({
       {isTransitioning && <PageLoader />}
       <div className="flex min-h-screen">
         <Sidebar>
+          <SidebarHeader>
+            <div className="text-lg font-headline font-semibold text-primary flex items-center gap-2">
+              <Zap className="w-5 h-5 fill-accent" />
+              <span>Painel de Liderança</span>
+            </div>
+          </SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
