@@ -11,7 +11,22 @@ interface MarkdownRendererProps {
 const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
     // This effect will run only on the client, after the component mounts.
     useEffect(() => {
-        mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'base',
+            themeVariables: {
+                background: 'var(--mermaid-background)',
+                primaryColor: 'var(--mermaid-background)',
+                primaryTextColor: 'var(--mermaid-foreground)',
+                lineColor: 'var(--mermaid-border)',
+                secondaryColor: 'var(--mermaid-primary)',
+                tertiaryColor: 'var(--mermaid-primary)',
+                primaryBorderColor: 'var(--mermaid-border)',
+                nodeBorder: 'var(--mermaid-border)',
+                mainBkg: 'var(--mermaid-primary)',
+                textColor: 'var(--mermaid-foreground)',
+            }
+        });
         // We call `run` manually after ensuring the element is in the DOM.
         mermaid.run({
             nodes: [document.getElementById(id)!],
