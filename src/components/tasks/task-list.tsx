@@ -98,7 +98,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onUpdateTask, onDeleteTask }
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Responsável}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">{task.Prazo}</TableCell>
                   <TableCell className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant="outline" className={`gap-1.5 ${color}`}>
+                    <Badge variant="default" className={`gap-1.5 ${color}`}>
                       <Icon className="w-3.5 h-3.5" />
                       {label}
                     </Badge>
