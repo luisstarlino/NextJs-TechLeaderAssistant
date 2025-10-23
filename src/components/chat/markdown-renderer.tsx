@@ -9,16 +9,21 @@ interface MarkdownRendererProps {
 }
 
 const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
-  useEffect(() => {
-    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
-    mermaid.contentLoaded();
-  }, []);
+    // This effect will run only on the client, after the component mounts.
+    useEffect(() => {
+        mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+        // We call `run` manually after ensuring the element is in the DOM.
+        mermaid.run({
+            nodes: [document.getElementById(id)!],
+        });
+    }, [id, content]); // Re-run if the content or ID changes.
 
-  return (
-    <div className="mermaid" id={id}>
-      {content}
-    </div>
-  );
+    // We render the container with the content inside, ready for Mermaid to process.
+    return (
+        <div className="mermaid" id={id}>
+            {content}
+        </div>
+    );
 };
 
 
