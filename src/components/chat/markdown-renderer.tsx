@@ -9,36 +9,42 @@ interface MarkdownRendererProps {
 }
 
 const MermaidRenderer: React.FC<{ id: string; content: string }> = ({ id, content }) => {
-    // This effect will run only on the client, after the component mounts.
     useEffect(() => {
+        const getStyle = (variable: string) => getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+
         mermaid.initialize({ 
             startOnLoad: false, 
             theme: 'base',
             themeVariables: {
-                background: 'var(--mermaid-background)',
-                primaryColor: 'var(--mermaid-background)',
-                primaryTextColor: 'var(--mermaid-foreground)',
-                lineColor: 'var(--mermaid-border)',
-                secondaryColor: 'var(--mermaid-primary)',
-                tertiaryColor: 'var(--mermaid-primary)',
-                primaryBorderColor: 'var(--mermaid-border)',
-                nodeBorder: 'var(--mermaid-border)',
-                mainBkg: 'var(--mermaid-primary)',
-                textColor: 'var(--mermaid-foreground)',
+                background: `hsl(${getStyle('--background')})`,
+                primaryColor: `hsl(${getStyle('--background')})`,
+                primaryTextColor: `hsl(${getStyle('--foreground')})`,
+                lineColor: `hsl(${getStyle('--border')})`,
+                secondaryColor: `hsl(${getStyle('--primary')})`,
+                tertiaryColor: `hsl(${getStyle('--primary')})`,
+                primaryBorderColor: `hsl(${getStyle('--border')})`,
+                nodeBorder: `hsl(${getStyle('--border')})`,
+                mainBkg: `hsl(${getStyle('--primary')})`,
+                textColor: `hsl(${getStyle('--foreground')})`,
             }
         });
-        // We call `run` manually after ensuring the element is in the DOM.
-        mermaid.run({
-            nodes: [document.getElementById(id)!],
-        });
-    }, [id, content]); // Re-run if the content or ID changes.
 
-    // We render the container with the content inside, ready for Mermaid to process.
-    return (
-        <div className="mermaid" id={id}>
-            {content}
-        </div>
-    );
+        const renderMermaid = async () => {
+          try {
+            const element = document.getElementById(id);
+            if (element) {
+              const { svg } = await mermaid.render(id + '-svg', content);
+              element.innerHTML = svg;
+            }
+          } catch (error) {
+            console.error('Mermaid rendering error:', error);
+          }
+        };
+
+        renderMermaid();
+    }, [id, content]);
+
+    return <div className="mermaid-container" id={id} />;
 };
 
 
@@ -99,3 +105,4 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
 };
 
 export default MarkdownRenderer;
+
