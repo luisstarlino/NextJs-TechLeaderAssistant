@@ -1,55 +1,40 @@
 
 'use client';
-import React, { useEffect } from 'react';
-import { useAuth } from '@/components/auth-provider';
+import React from 'react';
 import Header from '@/components/layout/header';
-import { useRouter, usePathname } from 'next/navigation';
 import { Loader2, LayoutDashboard, BrainCircuit } from 'lucide-react';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import TransitionLink from '@/components/layout/transition-link';
+import { useTransition } from '@/context/transition-context';
+import PageLoader from '@/components/ui/page-loader';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAuthReady } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (isAuthReady && !user) {
-      router.push('/login');
-    }
-  }, [isAuthReady, user, router]);
-
-  if (!isAuthReady || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const { isTransitioning } = useTransition();
 
   return (
     <SidebarProvider>
+      {isTransitioning && <PageLoader />}
       <div className="flex min-h-screen">
         <Sidebar>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard')}>
-                <Link href="/dashboard">
+              <SidebarMenuButton asChild>
+                <TransitionLink href="/dashboard">
                   <LayoutDashboard />
                   Dashboard
-                </Link>
+                </TransitionLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith('/mind-map')}>
-                <Link href="/mind-map">
+              <SidebarMenuButton asChild>
+                <TransitionLink href="/mind-map">
                   <BrainCircuit />
                   Mind Map
-                </Link>
+                </TransitionLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
