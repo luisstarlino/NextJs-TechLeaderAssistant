@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { TransitionProvider } from '@/context/transition-context';
 
 export const metadata: Metadata = {
   title: 'Tech Leader Assistant',
@@ -26,7 +27,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <TransitionProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </TransitionProvider>
           <Toaster />
         </FirebaseClientProvider>
       </body>
