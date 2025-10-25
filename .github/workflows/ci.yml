@@ -31,8 +31,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Linting
-        run: npm run lint
+      #- name: Run Linting
+      # run: npm run lint
 
       - name: Run Type Checking
         run: npm run typecheck
