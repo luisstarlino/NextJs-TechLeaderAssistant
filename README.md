@@ -79,3 +79,29 @@ The project run into: [http://localhost:9002](http://localhost:9002)
 ├── 📂 firebase       # Firebase configuration, providers, and hooks
 └── 📂 lib            # Utility and service functions
 ```
+
+---
+
+## ✨ Contributions  
+
+Contributions are welcome! Follow the steps below:  
+1. Fork the repository.  
+2. Create a branch for your feature: `git checkout -b my-feature`.  
+3. Submit your changes: `git push origin my-feature`.  
+4. Open a Pull Request.  
+
+---
+
+## 📄 License  
+
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for more information.  
+
+---
+
+## 🛡️ Contact  
+For questions or suggestions, please contact us:  
+**Developer Name**  
+- 📧 Email: [luis.guilherme009@gmail.com](mailto:luis.guilherme009@gmail.com)  
+- 💼 LinkedIn: [Luis Starlino](https://www.linkedin.com/in/luis-starlino/)  
+
+---  
