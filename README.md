@@ -1,81 +1,81 @@
 
-# 🤖 Painel de Liderança com IA 🤖
+# 🤖 Tech Leader Assistant With AI 🤖
 
 ![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=flat) ![Next.js](https://img.shields.io/badge/Next.js%2015-000000?style=flat&logo=next.js&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white) ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black) ![Genkit](https://img.shields.io/badge/Genkit%20(Gemini)-4285F4?style=flat&logo=google&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) ![ShadCN/UI](https://img.shields.io/badge/ShadCN/UI-000000?style=flat&logo=shadcn-ui&logoColor=white)
 
 ## 📖 Sobre
 
-**Painel de Liderança com IA** é um dashboard de gerenciamento de tarefas projetado para líderes técnicos, potencializado pelo modelo **Google Gemini** através do **Genkit**. A plataforma permite a criação, atualização e análise de tarefas usando comandos de linguagem natural, com todos os dados persistidos de forma segura no **Firebase Firestore**.
+**AI Leadership Dashboard** is a task management dashboard designed for technical leaders, powered by the **Google Gemini** model through **Genkit**. The platform allows you to create, update and analyze tasks using natural language commands, with all data securely stored in **Firebase Firestore**.
 
-Este projeto demonstra como a IA generativa pode ser integrada em aplicações de produtividade para otimizar o fluxo de trabalho, automatizar a criação de tarefas e gerar insights visuais, como mapas mentais, a partir de dados existentes.
+This project demonstrates how generative AI can be integrated into productivity applications to optimize workflow, automate task creation, and generate visual insights, such as mind maps, from existing data.
 
-## 🚀 Funcionalidades
+## 🚀 Features
 
-- **✨ Criação de Tarefas com IA:** Crie novas tarefas detalhadas usando linguagem natural (ex: "Nova tarefa: criar login...").
-- **🔄 Atualização de Status com IA:** Altere o status de uma tarefa com um simples comando de texto.
-- **🧠 Análise Visual com IA:** Gere mapas mentais (Mind Maps) de suas tarefas para uma visualização estratégica.
-- **🔥 Sincronização em Tempo Real:** As tarefas são sincronizadas em tempo real com o Firestore.
-- **🔒 Autenticação Segura:** Gerenciamento de usuários com o Firebase Authentication.
-- **📊 Exportação de Dados:** Exporte sua lista de tarefas para os formatos CSV e PDF.
-
----
-
-## 🛠️ Tecnologias
-
-- **[Next.js 15](https://nextjs.org/)** 🖥️: Framework React para construir interfaces rápidas e otimizadas com App Router.
-- **[Firebase](https://firebase.google.com/)** 🔥: Backend completo com Firestore para banco de dados NoSQL e Authentication para gerenciamento de usuários.
-- **[Genkit](https://firebase.google.com/docs/genkit)** 🤖: Framework da Google para construir aplicações com IA generativa, utilizando o modelo Gemini.
-- **[TypeScript](https://www.typescriptlang.org/)** 🔷: Superset do JavaScript que adiciona tipagem estática para maior robustez do código.
-- **[TailwindCSS](https://tailwindcss.com/)** 🎨: Framework de CSS utility-first para estilização ágil e moderna.
-- **[ShadCN/UI](https://ui.shadcn.com/)** 🧩: Coleção de componentes de UI reusáveis, construídos com Radix UI e Tailwind CSS.
-- **[Mermaid.js](https://mermaid-js.github.io/mermaid/#/)** 📈: Biblioteca para gerar diagramas e fluxogramas a partir de texto em sintaxe similar a Markdown.
+- **✨ AI Task Creation:** Create new detailed tasks using NPL[natural language] (e.g., “New task: create login...”).
+- **🔄 Status Update with AI:** Change the status of a task with a simple text command.
+- **🧠 Visual Analysis with AI:** Generate mind maps of your tasks for strategic visualization.
+- **🔥 Real-Time Synchronization:** Tasks are synchronized in real time with Firestore.
+- **🔒 Secure Authentication:** User management with Firebase Authentication.
+- **📊 Data Export:** Export your task list to CSV and PDF formats.
 
 ---
 
-## ⚙️ Como Executar o Projeto
+## 🛠️ Technologies
 
-### 🧰 Pré-requisitos
+- **[Next.js 15](https://nextjs.org/)** 🖥️: React framework for building fast, optimized interfaces with App Router.
+- **[Firebase](https://firebase.google.com/)** 🔥: Complete backend with Firestore for NoSQL databases and Authentication for user management.
+- **[Genkit](https://firebase.google.com/docs/genkit)** 🤖: Google framework for building applications with generative AI, using the Gemini model.
+- **[TypeScript](https://www.typescriptlang.org/)** 🔷: JavaScript superset that adds static typing for greater code robustness.
+- **[TailwindCSS](https://tailwindcss.com/)** 🎨: Utility-first CSS framework for agile and modern styling.
+- **[ShadCN/UI](https://ui.shadcn.com/)** 🧩: Collection of reusable UI components built with Radix UI and Tailwind CSS.
+- **[Mermaid.js](https://mermaid-js.github.io/mermaid/#/)** 📈: Library for generating diagrams and flowcharts from text in Markdown-like syntax.
+
+---
+
+## ⚙️ How to Execute the Project
+
+### 🧰 Requirements
 - Node.js v18+
 - NPM ou Yarn
 
-### 📥 Instalação
-1. Clone o repositório:
+### 📥 Installation
+1. Clone the repository:
    ```bash
-   git clone [URL_DO_SEU_REPOSITORIO]
-   cd [NOME_DO_PROJETO]
+   git clone https://github.com/luisstarlino/NextJs-TechLeaderAssistant
+   cd NextJs-TechLeaderAssistant
    ```
 
-2. Instale os Pacotes:
+2. Install the packages:
    ```bash
    npm install
-   # ou
+   # or
    yarn install
    ```
 
-### ▶️ Executar
-Inicie o servidor de desenvolvimento:
+### ▶️ Run
+Start the development server:
 ```bash
 npm run dev
 ```
-O projeto estará disponível em: [http://localhost:9002](http://localhost:9002)
+The project run into: [http://localhost:9002](http://localhost:9002)
 
 ---
 
-## 📂 Estrutura do Projeto
+## 📂 Project Structure
 ```
 📁 src
-├── 📂 app            # Páginas da aplicação (App Router)
-│   ├── 📂 (app)      # Rotas autenticadas (dashboard, mind-map)
+├── 📂 app            # Application pages (App Router)
+│   ├── 📂 (app)      # Authenticated routes (dashboard, mind-map)
 │   ├── login
 │   └── signup
-├── 📂 ai             # Lógica de IA com Genkit
-│   └── 📂 flows      # Fluxos de IA para tarefas e análises
-├── 📂 components     # Componentes React reutilizáveis
-│   ├── 📂 chat       # Componentes do painel de chat com IA
-│   ├── 📂 layout     # Componentes de estrutura (Header, Sidebar)
-│   ├── 📂 tasks      # Componentes para o dashboard de tarefas
-│   └── 📂 ui         # Componentes base do ShadCN/UI
-├── 📂 context        # Provedores de contexto React
-├── 📂 firebase       # Configuração, providers e hooks do Firebase
-└── 📂 lib            # Funções utilitárias e de serviço
+├── 📂 ai             # AI logic with Genkit
+│   └── 📂 flows      # AI flows for tasks and analysis
+├── 📂 components     # Reusable React components
+│   ├── 📂 chat       # AI chat panel components
+│   ├── 📂 layout     # Structure components (Header, Sidebar)
+│   ├── 📂 tasks      # Components for the task dashboard
+│   └── 📂 ui         # ShadCN/UI base components
+├── 📂 context        # React context providers
+├── 📂 firebase       # Firebase configuration, providers, and hooks
+└── 📂 lib            # Utility and service functions
 ```
